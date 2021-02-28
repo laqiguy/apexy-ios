@@ -22,7 +22,7 @@ extension JsonEndpoint {
     public func decode(
         fromResponse response: URLResponse?,
         withResult result: Result<Data, Error>) -> Result<Content, Failure> {
-        return result.flatMap { body -> Result<Content, Error> in
+        return result.flatMap { body -> Result<Content, Failure> in
             do {
                 try ResponseValidator.validate(response, with: body)
                 let resource = try JSONDecoder.default.decode(ResponseData<Content>.self, from: body)
@@ -36,6 +36,6 @@ extension JsonEndpoint {
 
 // MARK: - Response
 
-private struct ResponseData<Resource>: Decodable where Resource: Decodable {
+struct ResponseData<Resource>: Decodable where Resource: Decodable {
     let data: Resource
 }
