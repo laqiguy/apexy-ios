@@ -96,6 +96,8 @@ private struct EmptyEndpoint: Endpoint {
     
     typealias Content = Data
     
+    typealias Failure = Error
+    
     func makeRequest() throws -> URLRequest {
         URLRequest(url: URL(string: "empty")!)
     }
@@ -103,11 +105,17 @@ private struct EmptyEndpoint: Endpoint {
     func content(from response: URLResponse?, with body: Data) throws -> Data {
         return body
     }
+    
+    func transform(error: Error) -> Error {
+        return error
+    }
 }
 
 private struct SimpleUploadEndpoint: UploadEndpoint {
    
     typealias Content = Data
+    
+    typealias Failure = Error
     
     private let data: Data
     
@@ -125,6 +133,10 @@ private struct SimpleUploadEndpoint: UploadEndpoint {
     
     func content(from response: URLResponse?, with body: Data) throws -> Data {
         body
+    }
+    
+    func transform(error: Error) -> Error {
+        return error
     }
 }
 

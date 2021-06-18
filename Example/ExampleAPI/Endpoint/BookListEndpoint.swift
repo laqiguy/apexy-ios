@@ -12,6 +12,8 @@ public struct BookListEndpoint: JsonEndpoint {
     
     public typealias Content = [Book]
 
+    public typealias Failure = Error
+    
     public init() {}
     
     public func makeRequest() throws -> URLRequest {

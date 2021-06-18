@@ -20,7 +20,7 @@ open class WebLoader<Content>: ContentLoader<Content> {
     ///
     /// - Warning: You must call `startLoading` before calling this method!
     /// - Parameter endpoint: An object representing request.
-    public func request<T>(_ endpoint: T) where T: Endpoint, T.Content == Content {
+    public func request<T>(_ endpoint: T) where T: Endpoint, T.Content == Content, T.Failure == Error {
         progress = apiClient.request(endpoint) { [weak self] result in
             self?.progress = nil
             self?.finishLoading(result)
@@ -32,7 +32,7 @@ open class WebLoader<Content>: ContentLoader<Content> {
     /// - Parameters:
     ///   - endpoint: An object representing request.
     ///   - transform: A closure that transforms successfull result.
-    public func request<T>(_ endpoint: T, transform: @escaping (T.Content) -> Content) where T: Endpoint {
+    public func request<T>(_ endpoint: T, transform: @escaping (T.Content) -> Content) where T: Endpoint, T.Failure == Error {
         progress = apiClient.request(endpoint) { [weak self] result in
             self?.progress = nil
             self?.finishLoading(result.map(transform))
@@ -43,7 +43,7 @@ open class WebLoader<Content>: ContentLoader<Content> {
     /// - Parameters:
     ///   - endpoint: An object representing request.
     ///   - completion: A completion handler.
-    public func request<T>(_ endpoint: T, completion: @escaping (Result<T.Content, Error>) -> Void) where T: Endpoint {
+    public func request<T>(_ endpoint: T, completion: @escaping (Result<T.Content, Error>) -> Void) where T: Endpoint, T.Failure == Error {
         progress = apiClient.request(endpoint) { [weak self] result in
             self?.progress = nil
             completion(result)

@@ -14,6 +14,9 @@ public protocol Endpoint {
     ///
     /// - Author: Nino
     associatedtype Content
+    
+    /// Error type
+    associatedtype Failure: Error
 
     /// Create a new `URLRequest`.
     ///
@@ -38,8 +41,23 @@ public protocol Endpoint {
     ///   - data: The response body data.
     /// - Throws: Any response validation error.
     func validate(_ request: URLRequest?, response: HTTPURLResponse, data: Data?) throws
+    
+    /// Transform error.
+    ///
+    /// - Parameters:
+    ///   - error: Error that has been thrown during request
+    /// - Return: Error for current endpoint
+    func transform(error: Error) -> Failure
 }
 
 public extension Endpoint {
     func validate(_ request: URLRequest?, response: HTTPURLResponse, data: Data?) { }
+}
+
+public extension Endpoint where Failure == Error {
+    func transform(error: Error) -> Error { return error }
+}
+
+public extension UploadEndpoint where Failure == Error {
+    func transform(error: Error) -> Error { return error }
 }

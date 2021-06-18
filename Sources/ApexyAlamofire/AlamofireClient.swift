@@ -95,7 +95,7 @@ open class AlamofireClient: Client {
     /// - Returns: The progress of fetching the response data from the server for the request.
     open func request<T>(
         _ endpoint: T,
-        completionHandler: @escaping (APIResult<T.Content>) -> Void
+        completionHandler: @escaping (APIResult<T.Content, T.Failure>) -> Void
     ) -> Progress where T: Endpoint {
 
         let anyRequest = AnyRequest(create: endpoint.makeRequest)
@@ -106,10 +106,10 @@ open class AlamofireClient: Client {
                 queue: responseQueue,
                 completionHandler: { (response: DataResponse<Data, AFError>) in
 
-                    let result = APIResult<T.Content>(catching: { () throws -> T.Content in
+                    let result = APIResult<T.Content, Error>(catching: { () throws -> T.Content in
                         let data = try response.result.get()
                         return try endpoint.content(from: response.response, with: data)
-                    })
+                    }).mapError { endpoint.transform(error: $0) }
 
                     self.completionQueue.async {
                         self.responseObserver?(response.request, response.response, response.data, result.error)
@@ -128,7 +128,7 @@ open class AlamofireClient: Client {
     /// - Returns: The progress of uploading data to the server.
     open func upload<T>(
         _ endpoint: T,
-        completionHandler: @escaping (APIResult<T.Content>) -> Void
+        completionHandler: @escaping (APIResult<T.Content, T.Failure>) -> Void
     ) -> Progress where T: UploadEndpoint {
         
         let urlRequest: URLRequest
@@ -136,7 +136,7 @@ open class AlamofireClient: Client {
         do {
             (urlRequest, body) = try endpoint.makeRequest()
         } catch {
-            completionHandler(.failure(error))
+            completionHandler(.failure(endpoint.transform(error: error)))
             return Progress()
         }
         
@@ -154,10 +154,10 @@ open class AlamofireClient: Client {
             queue: responseQueue,
             completionHandler: { (response: DataResponse<Data, AFError>) in
 
-                let result = APIResult<T.Content>(catching: { () throws -> T.Content in
+                let result = APIResult<T.Content, Error>(catching: { () throws -> T.Content in
                     let data = try response.result.get()
                     return try endpoint.content(from: response.response, with: data)
-                })
+                }).mapError { endpoint.transform(error: $0) }
 
                 self.completionQueue.async {
                     self.responseObserver?(response.request, response.response, response.data, result.error)

@@ -11,7 +11,7 @@ public extension Client {
     func request<T>(_ endpoint: T) -> AnyPublisher<T.Content, Error> where T: Endpoint {
         let subject = PassthroughSubject<T.Content, Error>()
         
-        let progress = self.request(endpoint) { (result: Result<T.Content, Error>) in
+        let progress = self.request(endpoint) { (result: Result<T.Content, T.Failure>) in
             switch result {
             case .success(let content):
                 subject.send(content)

@@ -19,6 +19,9 @@ public protocol UploadEndpoint {
     /// Response type.
     associatedtype Content
 
+    /// Error type
+    associatedtype Failure: Error
+    
     /// Create a new `URLRequest` and uploadable payload.
     ///
     /// - Returns: Resource request and uploadable data
@@ -34,4 +37,10 @@ public protocol UploadEndpoint {
     /// - Throws: Any error creating content.
     func content(from response: URLResponse?, with body: Data) throws -> Content
     
+    /// Transform error.
+    ///
+    /// - Parameters:
+    ///   - error: Error that has been thrown during request
+    /// - Return: Error for current endpoint
+    func transform(error: Error) -> Failure
 }

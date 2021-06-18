@@ -57,19 +57,19 @@ open class URLSessionClient: Client {
     
     open func request<T>(
         _ endpoint: T,
-        completionHandler: @escaping (APIResult<T.Content>) -> Void) -> Progress where T : Endpoint {
+        completionHandler: @escaping (APIResult<T.Content, T.Failure>) -> Void) -> Progress where T : Endpoint {
         
         var request: URLRequest
         do {
             request = try endpoint.makeRequest()
             request = try requestAdapter.adapt(request)
         } catch {
-            completionHandler(.failure(error))
+            completionHandler(.failure(endpoint.transform(error: error)))
             return Progress()
         }
         
         let task = session.dataTask(with: request) { (data, response, error) in
-            let result = APIResult<T.Content>(catching: { () throws -> T.Content in
+            let result = APIResult<T.Content, Error>(catching: { () throws -> T.Content in
                 if let httpResponse = response as? HTTPURLResponse {
                     try endpoint.validate(request, response: httpResponse, data: data)
                 }
@@ -78,7 +78,7 @@ open class URLSessionClient: Client {
                     throw error
                 }
                 return try endpoint.content(from: response, with: data)
-            })
+            }).mapError { endpoint.transform(error: $0) }
             self.completionQueue.async {
                 self.responseObserver?(request, response as? HTTPURLResponse, data, error)
                 completionHandler(result)
@@ -89,24 +89,24 @@ open class URLSessionClient: Client {
         return task.progress
     }
     
-    open func upload<T>(_ endpoint: T, completionHandler: @escaping (APIResult<T.Content>) -> Void) -> Progress where T : UploadEndpoint {
+    open func upload<T>(_ endpoint: T, completionHandler: @escaping (APIResult<T.Content, T.Failure>) -> Void) -> Progress where T : UploadEndpoint {
         var request: (URLRequest, UploadEndpointBody)
         do {
             request = try endpoint.makeRequest()
             request.0 = try requestAdapter.adapt(request.0)
         } catch {
-            completionHandler(.failure(error))
+            completionHandler(.failure(endpoint.transform(error: error)))
             return Progress()
         }
         
         let handler: (Data?, URLResponse?, Error?) -> Void = { (data, response, error) in
-            let result = APIResult<T.Content>(catching: { () throws -> T.Content in
+            let result = APIResult<T.Content, Error>(catching: { () throws -> T.Content in
                 let data = data ?? Data()
                 if let error = error {
                     throw error
                 }
                 return try endpoint.content(from: response, with: data)
-            })
+            }).mapError{ endpoint.transform(error: $0) }
             self.completionQueue.async {
                 self.responseObserver?(request.0, response as? HTTPURLResponse, data, error)
                 completionHandler(result)
@@ -120,7 +120,8 @@ open class URLSessionClient: Client {
         case (let request, .file(let url)):
             task = session.uploadTask(with: request, fromFile: url, completionHandler: handler)
         case (_, .stream):
-            completionHandler(.failure(URLSessionClientError.uploadStreamUnimplemented))
+            let error = URLSessionClientError.uploadStreamUnimplemented
+            completionHandler(.failure(endpoint.transform(error: error)))
             return Progress()
         }
         task.resume()

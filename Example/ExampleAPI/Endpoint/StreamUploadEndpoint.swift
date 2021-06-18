@@ -13,6 +13,8 @@ public struct StreamUploadEndpoint: UploadEndpoint {
     
     public typealias Content = Void
     
+    public typealias Failure = Error
+    
     private let stream: InputStream
     private let size: Int
     

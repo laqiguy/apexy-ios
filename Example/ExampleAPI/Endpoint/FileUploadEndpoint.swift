@@ -13,6 +13,8 @@ public struct FileUploadEndpoint: UploadEndpoint {
     
     public typealias Content = Void
     
+    public typealias Failure = Error
+    
     private let fileURL: URL
     
     public init(fileURL: URL) {
